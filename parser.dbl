@@ -1,0 +1,309 @@
+;; =====================================================================================================================
+;; Borked Software Development - you'll know if your software is Borked.
+;;
+;; StringParser
+;;		class to hold methods for parsing strings into useful things
+;;		add methods and code for different parsing options
+;;
+;;		currently supported parsing:
+;;
+;;			Name<some delimiter>value<some other delimiter>comment
+;;
+;;			list of elements separated by delimiters with an optional comment string.
+;;  
+;; 
+;;
+;;	Method                 Description                          Argument(s)                 Description
+;;      ---------------------- ----------------------------------- --------------------------- --------------------------
+;;	ParseNameValue         parse name-value pair               SourceStr                   String to be parsed
+;;                                                             DelimiterStr                String with delimiter
+;;	                                                           CommentDelStr               String with comment delimiter
+;;
+;;
+;;	ParseList             parse list into ArrayList            SourceStr                   String to parse
+;; 	                                                           DelimiterStr                String with deliniter
+;; 	                                                           CommentDelStr               String with cvomment delimiter
+;;
+;; 	Results
+;; 	---------------------------------------------------------------------------------------------------------------------
+;; 	All parsed values are accessed as properties. They are defined as private otherwise.
+;;
+;; 
+;; Disclaimer
+;;
+;;	There is no guarantee that this code does anything, useful, harmful, or otherwise. 
+;;
+;; 	If you decide to use it:
+;; 
+;;	it is up to you to make sure it is safe and suitable for your purposes. It is entirely possible that there
+;;	are harmful side-effects or harmful direct effects from using this code. There may be no effects.
+;;
+;;	it might not even work at all. Use it at your own risk. Given that it was written in 2020, there is a chance it will
+;;	become sentient and hostile to the human race (par for the course this year)
+;;
+;;	feel free to use it commercially, privately, or at parties. but you are solely responsible for whatever it does
+;;	or doesn't do.
+;; 
+;; 	if you use this module and change it, please retain the original date and author in the revision list.
+;; 
+;; =====================================================================================================================
+;;
+;; Date        Author           Modification(s)
+;; ----------- ---------------- --------------------------------------------------
+;; 05-NOV-2020 Tim Lovern       New module as of this date
+;; 
+;; 
+;; 
+;; 
+;; 
+;;
+;; 
+;; =====================================================================================================================
+
+
+import System.Collections
+
+NAMESPACE parser
+
+public CLASS StringParser
+
+private nameStr	,@string		; name parsed from source string
+private valueStr	,@String		; value parsed from source string
+private commentStr	,@String	; comment parsed from source string
+private workStr	,@String		; internal working copy of source string
+								; destructively parsed
+private listArr	,@ArrayList		; used for parsing lists
+
+	;; --------------------------------------------------
+	;; this is the exposed name-value parser
+	;; --------------------------------------------------
+	public method parseNameValue, void
+
+		sourceStr		,@String
+		delimiterStr	,@String
+		commentDelStr	,@String
+	proc
+
+		nameStr    = ""
+		valueStr   = ""
+		commentStr = ""
+		
+		workStr = sourceStr
+
+		if (!String.IsNullorEmpty(commentDelStr))
+			ParseComment(commentDelStr)
+			
+		if (!String.IsNullorEmpty(delimiterStr))
+		then
+			ParseNameValuePair(delimiterStr)
+		else
+			nameStr = workStr
+
+	endmethod
+	
+	;; --------------------------------------------------
+	;; parse a delimited list into an arrayList object
+	;; commented portion of source string is stripped
+	;; --------------------------------------------------
+	public method parseList, void
+	
+		sourceStr		,@String
+		delimiterStr	,@String
+		commentDelStr	,@String
+		
+	proc
+	
+		;;listArr.clear()
+	
+		workStr = sourceStr
+		
+		if ((!String.IsNullorEmpty(commentDelStr)) && (!String.IsNullorEmpty(workStr)))
+			ParseComment(commentDelStr)
+		
+		if (!String.IsNullorEmpty(workStr))
+		begin
+			data elementCount	,i2
+			data saveComment	,@String
+			
+			saveComment = commentStr			;comment will be eaten by parseNameValue below
+						
+			elementCount = countElements(delimiterStr)
+			if (elementCount == 0)
+			then
+				begin
+					listArr = new ArrayList(1)
+					listArr.Add(workStr)
+				end
+			else
+				begin
+					data loopCnt	,I2
+
+					listArr = new ArrayList(elementCount+1)
+
+					loopCnt = elementCount+1
+						
+					while(loopCnt)
+					begin
+						parseNameValue(workStr,delimiterStr, commentDelStr)
+						
+						listArr.Add(nameStr)
+						workStr = valueStr
+						
+						decr loopCnt
+					end
+				end
+
+			commentStr = saveComment			;put the comment back
+		end
+	endmethod
+	
+	
+	;; --------------------------------------------------
+	;; private method to peel off the comment portion
+	;; --------------------------------------------------
+	private method ParseComment, void
+		delimiter	,@String
+	proc
+		if (workStr.contains(delimiter))
+		begin
+			data length		,i2
+			data position	,i2
+			
+			length = workStr.length
+			position = workStr.indexof(delimiter)
+			
+			if (position+1 != length)
+				commentStr = workStr.substring(position+1, (length - (position+1)))
+			
+			if (position == 0)
+			then
+				workStr = ""
+			else
+				workStr = workStr.substring(0, position)
+			
+		end
+
+		mreturn
+	endmethod
+	
+	;; --------------------------------------------------
+	;; private method that gets the name value pair
+	;; --------------------------------------------------
+	private method ParseNameValuePair, void
+		delimiter	,@String
+	proc
+
+		if (workStr.contains(delimiter))
+		then
+		begin
+			data length		,i2
+			data position	,i2
+			
+			length = workStr.length
+			position = workstr.indexof(delimiter)
+			
+			if (position == 0)
+			then
+				begin
+					nameStr = ""
+					valueStr = workStr.substring(1, length-1)
+				end
+			else
+				if (position == length - 1)
+				then
+					begin
+						nameStr = workStr.substring(0, position)
+						valueStr = ""
+					end
+				else
+					begin
+						nameStr = workStr.substring(0, position)
+						valueStr = workStr.substring(position+1, (length-(position+1)))
+					end
+		end
+		else
+			begin
+				nameStr = workStr
+				valueStr = ""
+			end
+
+		workStr = ""
+		
+		mreturn
+	endmethod
+	
+	;; --------------------------------------------------
+	;; private method to count the number of elements
+	;; in the list string
+	;; --------------------------------------------------
+	private method countElements, i4
+	
+	delimiter	,@String
+
+	proc
+		begin
+			data count	,i4
+			data start	,i4
+			data idx	,i4
+			
+			start = 0
+			count = 0
+			
+			idx = workStr.IndexOf(delimiter, start)
+
+			while (idx && (start < workstr.length-1))
+			begin
+				incr count
+				start = idx + 1
+				
+				if (start < (workStr.length-1))
+					idx = workStr.IndexOf(delimiter, start)				
+			end
+
+			mreturn count
+		end
+	endmethod
+	
+	
+	;; --------------------------------------------------
+	;; getter for name
+	;; --------------------------------------------------
+	public property ThisNameStr, String
+	method get
+		proc
+			mreturn nameStr
+	endmethod
+	endproperty
+
+	;; --------------------------------------------------
+	;; getter for value
+	;; --------------------------------------------------
+	public property ThisValueStr, String
+	method get
+		proc
+			mreturn valueStr
+	endmethod
+	endproperty
+
+	;; --------------------------------------------------
+	;; getter for comment
+	;; --------------------------------------------------
+	public property thisCommentStr, String
+	method get
+		proc
+			mreturn commentStr
+	endmethod
+	endproperty
+
+	;; --------------------------------------------------
+	;; getter for ListArr
+	;; --------------------------------------------------
+	public property thisListArr, @ArrayList
+	method get
+		proc
+			mreturn listArr
+	endmethod
+	endproperty
+
+ENDCLASS
+ENDNAMESPACE

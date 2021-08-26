@@ -1,0 +1,77 @@
+import parser
+import System.Collections
+
+record
+
+	parse		,@StringParser
+	arry		,@ArrayList
+
+
+
+
+proc
+	 
+	
+
+	parse = new StringParser()
+
+	parse.parseNameValue("abc~123;test this string", "~",";")
+
+	console.writeline("-[abc~123;test this string]-")
+	console.writeLine("NameStr     = "+ parse.ThisNameStr)
+	console.writeLine("valueStr    = "+ parse.ThisValueStr)
+	console.writeLine("commentStr  = "+ parse.ThisCommentStr)
+	console.writeline(" ")
+	
+	parse.parseNameValue("~abc123;test this string", "~",";")
+
+	console.writeline("-[~abc123;test this string]-")
+	console.writeLine("NameStr     = "+ parse.ThisNameStr)
+	console.writeLine("valueStr    = "+ parse.ThisValueStr)
+	console.writeLine("commentStr  = "+ parse.ThisCommentStr)
+	console.writeline(" ")
+	
+	parse.parseNameValue(";abc123test this string", "~",";")
+
+	console.writeline("-[;abc123test this string]-")
+	console.writeLine("NameStr     = "+ parse.ThisNameStr)
+	console.writeLine("valueStr    = "+ parse.ThisValueStr)
+	console.writeLine("commentStr  = "+ parse.ThisCommentStr)
+	console.writeline(" ")
+
+	parse.parseNameValue("abc123test this string", "~",";")
+
+	console.writeline("-[abc123test this string]-")
+	console.writeLine("NameStr     = "+ parse.ThisNameStr)
+	console.writeLine("valueStr    = "+ parse.ThisValueStr)
+	console.writeLine("commentStr  = "+ parse.ThisCommentStr)
+	console.writeline(" ")
+	
+	parse.parseList("A~B~C~D~E~F~G~;this is a comment", "~",";")
+	
+	arry = parse.ThisListArr
+	
+	begin
+		data count	,i4
+		data idx	,i4
+		data value	,@String
+
+		console.writeline("-[A~B~C~D~E~F~G~;this is a comment]-")
+		
+		count = arry.count
+		
+		console.writeline("ary contains: " + string(count) + " elements")
+		
+		for idx from 1 thru count
+		begin
+			value = (String) arry.indexer(idx-1)
+			console.writeLine("    {  " + value + " }")
+		end
+
+		console.writeLine("commentStr  = "+ parse.ThisCommentStr)
+
+	end
+	console.writeline(" ")
+	
+
+end
